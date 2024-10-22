@@ -66,6 +66,7 @@ query selectProblem($titleSlug: String!) {
         note
     }
 }`;
+// queries.ts
 exports.dailyQeustion = `
 query getDailyProblem {
   activeDailyCodingChallengeQuestion {
@@ -186,6 +187,7 @@ exports.skillStatsQuery = `
       }
     }
 `;
+// queries.ts
 exports.getUserProfileQuery = `
   query getUserProfile($username: String!) {
     allQuestionsCount {
@@ -241,6 +243,7 @@ exports.getUserProfileQuery = `
     }
   }
 `;
+// queries.ts
 exports.officialSolutionQuery = `
     query OfficialSolution($titleSlug: String!) {
       question(titleSlug: $titleSlug) {
@@ -288,6 +291,7 @@ exports.officialSolutionQuery = `
       }
     }
 `;
+// queries.ts
 exports.userProfileCalendarQuery = `
     query UserProfileCalendar($username: String!, $year: Int!) {
       matchedUser(username: $username) {
@@ -307,6 +311,7 @@ exports.userProfileCalendarQuery = `
       }
     }
 `;
+// queries.ts
 exports.userProfileUserQuestionProgressV2Query = `
     query userProfileUserQuestionProgressV2($userSlug: String!) {
         userProfileUserQuestionProgressV2(userSlug: $userSlug) {

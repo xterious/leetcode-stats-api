@@ -22,6 +22,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,38 +46,40 @@ const app = (0, express_1.default)();
 let cache = apicache_1.default.middleware;
 const API_URL = process.env.LEETCODE_API_URL || 'https://leetcode.com/graphql';
 const limiter = (0, express_rate_limit_1.default)({
-    windowMs: 60 * 60 * 1000,
+    windowMs: 60 * 60 * 1000, // 1 hour
     limit: 60,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: 'Too many request from this IP, try again in 1 hour',
 });
 app.use(cache('5 minutes'));
-app.use((0, cors_1.default)());
-app.use(limiter);
+app.use((0, cors_1.default)()); //enable all CORS request
+app.use(limiter); //limit to all API
 app.use((req, _res, next) => {
     console.log('Requested URL:', req.originalUrl);
     next();
 });
-async function queryLeetCodeAPI(query, variables) {
-    try {
-        const response = await axios_1.default.post(API_URL, { query, variables });
-        if (response.data.errors) {
-            throw new Error(response.data.errors[0].message);
+function queryLeetCodeAPI(query, variables) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const response = yield axios_1.default.post(API_URL, { query, variables });
+            if (response.data.errors) {
+                throw new Error(response.data.errors[0].message);
+            }
+            return response.data;
         }
-        return response.data;
-    }
-    catch (error) {
-        if (error.response) {
-            throw new Error(`Error from LeetCode API: ${error.response.data}`);
+        catch (error) {
+            if (error.response) {
+                throw new Error(`Error from LeetCode API: ${error.response.data}`);
+            }
+            else if (error.request) {
+                throw new Error('No response received from LeetCode API');
+            }
+            else {
+                throw new Error(`Error in setting up the request: ${error.message}`);
+            }
         }
-        else if (error.request) {
-            throw new Error('No response received from LeetCode API');
-        }
-        else {
-            throw new Error(`Error in setting up the request: ${error.message}`);
-        }
-    }
+    });
 }
 app.get('/', (_req, res) => {
     res.json({
@@ -122,20 +133,20 @@ app.get('/', (_req, res) => {
         },
     });
 });
-app.get('/officialSolution', async (req, res) => {
+app.get('/officialSolution', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { titleSlug } = req.query;
     if (!titleSlug) {
         return res.status(400).json({ error: 'Missing titleSlug query parameter' });
     }
     try {
-        const data = await queryLeetCodeAPI(newQueries_1.officialSolutionQuery, { titleSlug });
+        const data = yield queryLeetCodeAPI(newQueries_1.officialSolutionQuery, { titleSlug });
         return res.json(data);
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
     }
-});
-app.get('/userProfileCalendar', async (req, res) => {
+}));
+app.get('/userProfileCalendar', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, year } = req.query;
     if (!username || !year || typeof year !== 'string') {
         return res
@@ -143,7 +154,7 @@ app.get('/userProfileCalendar', async (req, res) => {
             .json({ error: 'Missing or invalid username or year query parameter' });
     }
     try {
-        const data = await queryLeetCodeAPI(newQueries_1.userProfileCalendarQuery, {
+        const data = yield queryLeetCodeAPI(newQueries_1.userProfileCalendarQuery, {
             username,
             year: parseInt(year),
         });
@@ -152,7 +163,8 @@ app.get('/userProfileCalendar', async (req, res) => {
     catch (error) {
         return res.status(500).json({ error: error.message });
     }
-});
+}));
+// Format data
 const formatData = (data) => {
     return {
         totalSolved: data.matchedUser.submitStats.acSubmissionNum[0].count,
@@ -172,10 +184,10 @@ const formatData = (data) => {
         matchedUserStats: data.matchedUser.submitStats,
     };
 };
-app.get('/userProfile/:id', async (req, res) => {
+app.get('/userProfile/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.params.id;
     try {
-        const data = await queryLeetCodeAPI(newQueries_1.getUserProfileQuery, {
+        const data = yield queryLeetCodeAPI(newQueries_1.getUserProfileQuery, {
             username: user,
         });
         if (data.errors) {
@@ -188,16 +200,16 @@ app.get('/userProfile/:id', async (req, res) => {
     catch (error) {
         res.send(error);
     }
-});
-const handleRequest = async (res, query, params) => {
+}));
+const handleRequest = (res, query, params) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const data = await queryLeetCodeAPI(query, params);
+        const data = yield queryLeetCodeAPI(query, params);
         res.json(data);
     }
     catch (error) {
         res.status(500).json({ error: error.message });
     }
-};
+});
 app.get('/dailyQuestion', (_, res) => {
     handleRequest(res, newQueries_1.dailyQeustion, {});
 });
@@ -227,11 +239,16 @@ app.get('/userContestRankingInfo/:username', (req, res) => {
     const { username } = req.params;
     handleRequest(res, newQueries_1.userContestRankingInfoQuery, { username });
 });
+//get the daily leetCode problem
 app.get('/daily', leetcode.dailyProblem);
+//get the selected question
 app.get('/select', leetcode.selectProblem);
+//get list of problems
 app.get('/problems', leetcode.problems);
+//get 20 trending Discuss
 app.get('/trendingDiscuss', leetcode.trendingCategoryTopics);
 app.get('/languageStats', leetcode.languageStats);
+// Construct options object on all user routes.
 app.use('/:username*', (req, _res, next) => {
     req.body = {
         username: req.params.username,
@@ -239,6 +256,7 @@ app.use('/:username*', (req, _res, next) => {
     };
     next();
 });
+//get user profile details
 app.get('/:username', leetcode.userData);
 app.get('/:username/badges', leetcode.userBadges);
 app.get('/:username/solved', leetcode.solvedProblem);

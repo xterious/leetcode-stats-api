@@ -59,6 +59,7 @@ const calendar = (req, res) => {
     controllers.fetchUserDetails(req.body, res, formatUtils.formatSubmissionCalendarData, gqlQueries.userProfileQuery);
 };
 exports.calendar = calendar;
+//Problems Details
 const dailyProblem = (_req, res) => {
     controllers.fetchSingleProblem(res, formatUtils.formatDailyData, gqlQueries.dailyProblemQuery, null);
 };
