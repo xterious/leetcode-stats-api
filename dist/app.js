@@ -54,7 +54,7 @@ const limiter = (0, express_rate_limit_1.default)({
 });
 app.use(cache('5 minutes'));
 app.use((0, cors_1.default)()); //enable all CORS request
-app.use(limiter); //limit to all API
+//app.use(limiter); limit to all API
 app.use((req, _res, next) => {
     console.log('Requested URL:', req.originalUrl);
     next();
